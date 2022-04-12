@@ -1,0 +1,42 @@
+﻿@model  Nric.Application.ViewModel.CitizenViewModel
+@{
+    ViewBag.Title = "Save";
+    Layout = null;
+}
+
+
+@using (Html.BeginForm("Save", "Home", FormMethod.Post, new { onsubmit = "return SubmitForm(this)" }))
+{
+    <div class="alert alert-danger" ID="errorMessage" style="display: none" />
+
+    @Html.HiddenFor(model => model.Id)
+
+    <div class="form-group">
+        @Html.LabelFor(model => model.Nric, new { @class = "control-label" })
+        @Html.EditorFor(model => model.Nric, new { htmlAttributes = new { @class = "form-control" } })
+        @Html.ValidationMessageFor(model => model.Nric)
+    </div>
+
+    <div class="form-group">
+        @Html.LabelFor(model => model.FirstName, new { @class = "control-label" })
+        @Html.EditorFor(model => model.FirstName, new { htmlAttributes = new { @class = "form-control" } })
+        @Html.ValidationMessageFor(model => model.FirstName)
+    </div>
+
+    <div class="form-group">
+        @Html.LabelFor(model => model.MiddleName, new { @class = "control-label" })
+        @Html.EditorFor(model => model.MiddleName, new { htmlAttributes = new { @class = "form-control" } })
+        @Html.ValidationMessageFor(model => model.MiddleName)
+    </div>
+
+    <div class="form-group">
+        @Html.LabelFor(model => model.LastName, new { @class = "control-label" })
+        @Html.EditorFor(model => model.LastName, new { htmlAttributes = new { @class = "form-control" } })
+        @Html.ValidationMessageFor(model => model.LastName)
+    </div>
+
+    <div class="form-group">
+        <input type="submit" value="Submit" class="btn btn-success" />
+        <input type="reset" value="Reset" class="btn btn-warning" />
+    </div>
+}

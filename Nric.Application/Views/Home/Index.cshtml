@@ -1,0 +1,206 @@
+﻿@model Nric.Application.ViewModel.ListCitizenViewModel
+
+@{
+    ViewBag.Title = "Home Page";
+}
+
+<div class="row form-group form-horizontal">
+    <div class="col-md-3">
+        <a class="btn btn-primary" onclick="PopupForm('@Url.Action("Save", "Home")')">New</a>
+        <button class="btn btn-success" id="btnActivate" type="submit">Activate</button>
+        <button class="btn btn-danger" id="btnDeactivate" type="submit">Deactivate</button>
+    </div>
+    <div class="col-md-3 col-md-offset-6">
+        <form action="/Home/Index" method="post" class="input-group">
+            <input type="text" class="form-control" name="searchTerm" value="" id="txtSearch">
+            <span class="input-group-btn">
+                <button class="btn btn-info" id="btnSearch" type="submit">Search</button>
+            </span>
+        </form>
+    </div>
+</div>
+<br />
+<div class="row">
+    <div class="col-md-12">
+        <table class="table table-striped table-responsive  table-bordered" id="tblData">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Id</th>
+                    <th>NRIC</th>
+                    <th>First Name</th>
+                    <th>Middle Name</th>
+                    <th>Last Name</th>
+                    <th>Created Date</th>
+                    <th>Activated Date</th>
+                    <th>Deactivated Date</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+
+                @if (Model.Citizens != null)
+                {
+                    foreach (var citizen in Model.Citizens)
+                    {
+                        <tr>
+                            <td><input type="checkbox" value="@citizen.Id"></td>
+                            <td>@citizen.Id</td>
+                            <td>@citizen.NricId</td>
+                            <td>@citizen.FirstName</td>
+                            <td>@citizen.MiddleName</td>
+                            <td>@citizen.LastName</td>
+                            <td>@(citizen.DateCreated == DateTime.MinValue ? "--" : citizen.DateCreated.ToShortDateString())</td>
+                            <td>@(citizen.DateLastActivated == DateTime.MinValue ? "--" : citizen.DateLastActivated.ToShortDateString())</td>
+                            <td>@(citizen.DateLastDeActivated == DateTime.MinValue ? "--" : citizen.DateLastDeActivated.ToShortDateString())</td>
+                            <td>@citizen.Status</td>
+                            <td><a class='btn btn-warning' onclick=PopupForm('@Url.Action("Save", "Home" , new {citizen.Id})')>Edit</a></td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+        @if (Model.Pager.EndPage > 1)
+        {
+            <ul class="pagination">
+                @if (Model.Pager.CurrentPage > 1)
+                {
+                    <li>
+                        <a href="~/Home/Index">First</a>
+                    </li>
+                    <li>
+                        <a href="~/Home/Index?page=@(Model.Pager.CurrentPage - 1)">Previous</a>
+                    </li>
+                }
+                @for (var page = Model.Pager.StartPage; page <= Model.Pager.EndPage; page++)
+                {
+                    <li class="@(page == Model.Pager.CurrentPage ? " active" : "" )">
+                        <a href="~/Home/Index?page=@page">@page</a>
+                    </li>
+                }
+                @if (Model.Pager.CurrentPage < Model.Pager.TotalPages)
+                {
+                    <li>
+                        <a href="~/Home/Index?page=@(Model.Pager.CurrentPage + 1)">Next</a>
+                    </li>
+                    <li>
+                        <a href="~/Home/Index?page=@(Model.Pager.TotalPages)">Last</a>
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+</div>
+
+<script>
+    $(document).ready(function (){
+
+
+        $('#btnDeactivate').on('click', function () {
+        var selectedRows = [];
+
+        $("#tblData input[type=checkbox]:checked").each(function () {
+            var row = $(this).closest("tr")[0];
+            selectedRows.push(row.cells[1].innerHTML);
+        });
+
+        if (selectedRows.length === 0) {
+            alert("Select at least one row to deactivate");
+            return false;
+        }
+        var data = {
+            citizenIds: selectedRows,
+            Status: false
+        };
+
+        $.ajax({
+            url: '@Url.Action("SetSubscriptionStatus", "Home")',
+            type: "POST",
+            data: data,
+            success: function () {
+                selectedRows.length = 0;
+                $('input:checkbox').removeAttr('checked');
+                window.location.reload(true);
+            }
+        });
+    });
+
+    $('#btnActivate').on('click', function () {
+        var selectedRows = [];
+
+        $("#tblData input[type=checkbox]:checked").each(function () {
+            var row = $(this).closest("tr")[0];
+            selectedRows.push(row.cells[1].innerHTML);
+        });
+
+        if (selectedRows.length === 0) {
+            alert("Select at least one row to activate");
+            return false;
+        }
+
+        var data = {
+            citizenIds: selectedRows,
+            Status: true
+        };
+
+        $.ajax({
+            url: '@Url.Action("SetSubscriptionStatus", "Home")',
+            type: "POST",
+            data: data,
+            success: function () {
+                selectedRows.length = 0;
+                $('input:checkbox').removeAttr('checked');
+                window.location.reload(true);
+            }
+        });
+    });
+});
+
+function PopupForm(url) {
+
+    var formDiv = $('<div/>');
+
+    $.get(url).done(function (response) {
+
+        formDiv.html(response);
+
+        Popup = formDiv.dialog({
+
+            autoOpen: true,
+            resizable: false,
+            title: 'Citizen Details',
+            height: 450,
+            width: 400,
+            close: function () {
+                Popup.dialog('destroy').remove();
+            }
+        });
+    });
+}
+
+function SubmitForm(form) {
+    $.validator.unobtrusive.parse(form);
+    if ($(form).valid()) {
+
+        $.ajax({
+            type: "POST",
+            url: form.action,
+            data: $(form).serialize(),
+            success: function (data) {
+
+                if (data.success) {
+                    Popup.dialog('close');
+                    window.location.reload(true);
+                } else {
+                    $("#errorMessage").html(data.message);
+                    $('#errorMessage').show();
+
+                    return false;
+                }
+            }
+        });
+    }
+    return false;
+}
+</script>
